@@ -124,7 +124,7 @@ RoomPosition.prototype.hasNonObstacleAdjacentPosition = function() {
 };
 
 RoomPosition.prototype.checkForCreep = function() {
-  return !!this.lookFor(LOOK_CREEPS).length;
+  return this.lookFor(LOOK_CREEPS).length > 0;
 };
 
 RoomPosition.prototype.checkForWall = function() {

@@ -19,13 +19,13 @@ roles.powerdefender.action = function(creep) {
     return false;
   }
   const hostileCreeps = creep.room.findEnemies();
-  if (hostileCreeps.length) {
+  if (hostileCreeps.length > 0) {
     creep.moveTo(hostileCreeps[0]);
     creep.rangedAttack(hostileCreeps[0]);
     return true;
   }
   const powerBank = creep.room.findPropertyFilter(FIND_STRUCTURES, 'structureType', [STRUCTURE_POWER_BANK]);
-  if (!powerBank.length) {
+  if (powerBank.length === 0) {
     const hostileCreep = creep.findClosestEnemy();
     if (hostileCreep !== null) {
       creep.moveTo(hostileCreep);

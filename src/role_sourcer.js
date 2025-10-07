@@ -82,7 +82,7 @@ roles.sourcer.preMove = function(creep, directions) {
  * getSource - Gets the source from heap data, or sets if missing
  *
  * @param {object} creep - The creep
- * @return {object} - The source
+ * @return {object} - The tower
  **/
 function getSource(creep) {
   if (!creep.data.source) {
@@ -125,15 +125,6 @@ function harvest(creep) {
   if (returnCode === ERR_TIRED) {
     return false;
   }
-  
-  // FIXED: Handle out of range - reset routing to path back to source
-  if (returnCode === ERR_NOT_IN_RANGE) {
-    creep.log('Out of range from source, resetting routing to return to source');
-    delete creep.memory.routing.reached;
-    creep.memory.routing.reverse = false;
-    return false;
-  }
-  
   creep.log('harvest: ' + returnCode);
   return false;
 }
@@ -159,7 +150,7 @@ function transferToLink(creep) {
 function getContainer(creep) {
   if (!creep.data.container) {
     const structures = creep.pos.findInRange(FIND_STRUCTURES, 0, {filter: {structureType: STRUCTURE_CONTAINER}});
-    if (!structures.length) {
+    if (structures.length === 0) {
       return;
     }
     creep.data.container = structures[0].id;
@@ -171,7 +162,7 @@ function getContainer(creep) {
  * getContainerConstructionSite - Gets the container construction site from heap data, or sets if missing
  *
  * @param {object} creep - The creep
- * @return {object} - The container construction site
+ * @return {object} - The container
  **/
 function getContainerConstructionSite(creep) {
   if (!creep.data.containerConstructionSite) {

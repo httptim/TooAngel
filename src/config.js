@@ -30,7 +30,7 @@ global.config = {
   },
 
   quests: {
-    enabled: false,
+    enabled: true,
     endTime: 10000,
     signControllerPercentage: 0.1,
     checkInterval: 100,
@@ -45,7 +45,7 @@ global.config = {
   },
 
   info: {
-    signController: false,
+    signController: true,
     signText: 'Fully automated open source NPC: http://tooangel.github.io/screeps/',
     resignInterval: 500,
   },
@@ -64,7 +64,7 @@ global.config = {
   },
 
   debug: {
-    attack: false,
+    attack: true,
     baseBuilding: false,
     diplomacy: false,
     getPartsConfLogs: false,
@@ -87,7 +87,7 @@ global.config = {
     constructionSites: false,
     routing: false,
     brain: false,
-    commodities: false,
+    commodities: true,
     memory: true,
     boosts: false,
   },
@@ -109,15 +109,6 @@ global.config = {
   revive: {
     disabled: false,
     nextroomerInterval: 400,
-  },
-
-  trapped: {
-    enabled: true,
-    minimumGCL: 3,
-    stagnationThreshold: 50000, // 50k ticks = ~7 days
-    checkInterval: 1500, // Analysis frequency (same as expansion checks)
-    logInterval: 1000, // Status logging frequency
-    debugLogging: true,
   },
 
   nextRoom: {
@@ -148,6 +139,8 @@ global.config = {
   carryHelpers: {
     ticksUntilHelpCheck: 400,
     maxHelpersAmount: 5,
+    helpThreshold: 1500, // todo not used?
+    needThreshold: 750, // todo not used?
     maxDistance: 7,
     factor: 0.2,
   },
@@ -188,6 +181,7 @@ global.config = {
   path: {
     refresh: 2000000,
     allowRoutingThroughFriendRooms: false,
+    pathFindIncomplete: true, // todo not used ?
   },
 
   external: {
@@ -242,11 +236,6 @@ global.config = {
     scout: true,
     upgraderMinStorage: 0,
     upgraderStorageFactor: 2,
-    // RCL 8 upgrader scaling thresholds
-    upgraderRcl8MinStorage: 10000,
-    upgraderRcl8MaxStorage: 800000,
-    // RCL 8 universal scaling threshold
-    universalRcl8MinStorageForTwo: 500000,
     lastSeenThreshold: 100000,
     notify: false,
     observerRange: 5, // Reduced to save memory OBSERVER_RANGE, // between 1 and 10:OBSERVER_RANGE
@@ -356,12 +345,6 @@ global.config = {
   },
 
   maliciousNpcUsernames: ['Invader', 'Source Keeper'],
-
-  // Traffic Manager Configuration
-  trafficManager: {
-    enabled: true,
-    excludedRoles: ['sourcer', 'extractor'],
-  },
 };
 
 try {

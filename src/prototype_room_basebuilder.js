@@ -50,16 +50,6 @@ Room.prototype.destroyStructureWall = function(structure) {
         }
       }
     }
-    const flags = this.find(FIND_FLAGS, {
-      filter: function(flag) {
-        return flag.name.startsWith('allowWall');
-      },
-    });
-    for (const flag of flags) {
-      if (structure.pos.isEqualTo(flag.pos)) {
-        return false;
-      }
-    }
   }
   structure.destroy();
   return true;
@@ -71,16 +61,6 @@ Room.prototype.destroyStructureRoad = function(structure) {
       if (structure.pos.isEqualTo(pos.x, pos.y)) {
         return false;
       }
-    }
-  }
-  const flags = this.find(FIND_FLAGS, {
-    filter: function(flag) {
-      return flag.name.startsWith('allowRoad');
-    },
-  });
-  for (const flag of flags) {
-    if (structure.pos.isEqualTo(flag.pos)) {
-      return false;
     }
   }
   structure.destroy();

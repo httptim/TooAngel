@@ -4,7 +4,6 @@ const {checkPlayers} = require('./diplomacy');
 const {handleQuests} = require('./quests_host');
 const {prepareMemory} = require('./brain_memory');
 const {handleSquadManager} = require('./brain_squadmanager');
-const {detectTrappedScenario} = require('./brain_trapped');
 
 global.cpuUsed = 0;
 
@@ -101,7 +100,6 @@ module.exports.execute = function() {
     prepareMemory();
     brain.buyPower();
     brain.handleNextroomer();
-    detectTrappedScenario();
     handleSquadManager();
     brain.handleIncomingTransactions();
     handleQuests();

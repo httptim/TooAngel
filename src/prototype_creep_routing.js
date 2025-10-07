@@ -261,23 +261,6 @@ function moveByPathMyNoPathPosition(room, path) {
 }
 
 /**
- * handleStuck
- *
- * @param {object} creep
- * @return {boolean}
- */
-function handleStuck(creep) {
-  if (creep.room.memory.misplacedSpawn) {
-    // When the misplaced spawn is on the path, creeps get stuck so moveRandom
-    creep.moveRandom();
-  } else {
-    creep.moveRandomWithin(creep.pos);
-  }
-  creep.say('stuck');
-  return true;
-}
-
-/**
  * moveByPathMy follows the given path or gets back to the path
  *
  * @param {list} path - The path to follow
@@ -293,7 +276,14 @@ Creep.prototype.moveByPathMy = function(path, pathPos, directions) {
   }
 
   if (this.isStuck()) {
-    return handleStuck(this);
+    if (this.room.memory.misplacedSpawn) {
+      // When the misplaced spawn is on the path, creeps get stuck so moveRandom
+      this.moveRandom();
+    } else {
+      this.moveRandomWithin(this.pos);
+    }
+    this.say('stuck');
+    return true;
   }
 
   pathPos = pathPos || this.memory.routing.pathPos;
