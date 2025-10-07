@@ -101,6 +101,7 @@ module.exports.execute = function() {
     if (config.economy.enabled) {
       brain.evaluateEconomy();
     }
+    brain.manageRemoteMining();
     brain.buyPower();
     brain.handleNextroomer();
     handleSquadManager();

@@ -191,31 +191,115 @@ function haveEnoughSystemResources() {
 }
 
 /**
+ * Find best room to support claiming (uses economy brain)
+ * @return {object|false} - {roomName, canSupport} or false
+ */
+function findRoomToSupportClaiming() {
+  if (!config.economy.enabled) {
+    // Fallback: pick room with highest energy
+    const supportingRooms = Memory.myRooms.filter((roomName) => {
+      const room = Game.rooms[roomName];
+      return room && room.storage && room.storage.store[RESOURCE_ENERGY] > 50000;
+    });
+
+    if (supportingRooms.length === 0) {
+      debugLog('nextroomer', 'No rooms have enough energy to support expansion');
+      return false;
+    }
+
+    supportingRooms.sort((a, b) => {
+      const roomA = Game.rooms[a];
+      const roomB = Game.rooms[b];
+      return (roomB.storage ? roomB.storage.store[RESOURCE_ENERGY] : 0) -
+             (roomA.storage ? roomA.storage.store[RESOURCE_ENERGY] : 0);
+    });
+
+    return {roomName: supportingRooms[0], canSupport: true};
+  }
+
+  // Use economy brain
+  const supportingRooms = Memory.myRooms.filter((roomName) => {
+    const room = Game.rooms[roomName];
+    if (!room || !room.data.economy) {
+      return false;
+    }
+    return canSupportExpansion(room);
+  });
+
+  if (supportingRooms.length === 0) {
+    debugLog('nextroomer', 'No rooms have healthy economy to support expansion');
+    return false;
+  }
+
+  // Choose room with best economy
+  supportingRooms.sort((a, b) => {
+    const roomA = Game.rooms[a];
+    const roomB = Game.rooms[b];
+    return (roomB.storage ? roomB.storage.store[RESOURCE_ENERGY] : 0) -
+           (roomA.storage ? roomA.storage.store[RESOURCE_ENERGY] : 0);
+  });
+
+  return {roomName: supportingRooms[0], canSupport: true};
+}
+
+/**
  * claimRoom
  *
  * @param {list} possibleRooms
  */
 function claimRoom(possibleRooms) {
+  const supportingRoom = findRoomToSupportClaiming();
+  if (!supportingRoom) {
+    debugLog('nextroomer', 'No room can support expansion economically');
+    return;
+  }
+
+  const baseRoom = supportingRoom.roomName;
+
+  // Score all possible rooms from this base
   const roomsWithinReach = possibleRooms.filter((room) => findRoomsWithinReach(room).length > 0);
   debugLog('nextroomer', `roomsWithinReach: ${JSON.stringify(roomsWithinReach)}`);
 
-  const evaluatedRooms = getNextRoomValuatedRoomMap(roomsWithinReach);
+  const evaluatedRooms = getNextRoomValuatedRoomMap(roomsWithinReach, baseRoom);
+
+  if (evaluatedRooms.length === 0) {
+    debugLog('nextroomer', 'No viable rooms to claim');
+    return;
+  }
+
   const selectedRoomName = evaluatedRooms[0].roomName;
+  const selectedScore = evaluatedRooms[0].value;
 
   const possibleMyRooms = findRoomsWithinReach(selectedRoomName);
   const selectedMyRoom = possibleMyRooms[Math.floor(Math.random() * possibleMyRooms.length)];
-  debugLog('nextroomer', `handleNextroomer - Will claim: ${selectedRoomName} from ${selectedMyRoom} based on ${JSON.stringify(evaluatedRooms)}`);
-  // TODO selected the closest, highest energy, highest spawn idle room to spawn the claimer
+
+  debugLog('nextroomer', `Claiming ${selectedRoomName} from ${selectedMyRoom} (score: ${selectedScore})`);
+
   const room = Game.rooms[selectedMyRoom];
   const selectedRoomData = global.data.rooms[selectedRoomName];
+
+  // Spawn claimer
   room.checkRoleToSpawn('claimer', 1, selectedRoomData.controllerId, selectedRoomName);
+
+  // Spawn nextroomers (increased from 1 to 2 for faster setup)
   for (const myRoomName of possibleMyRooms) {
     const myRoom = Game.rooms[myRoomName];
     if (!myRoom.isStruggling()) {
       continue;
     }
-    myRoom.checkRoleToSpawn('nextroomer', 1, selectedRoomData.controllerId, selectedRoomName);
+    myRoom.checkRoleToSpawn('nextroomer', 2, selectedRoomData.controllerId, selectedRoomName);
   }
+
+  // Track expansion in memory
+  if (!Memory.expansionHistory) {
+    Memory.expansionHistory = [];
+  }
+  Memory.expansionHistory.push({
+    targetRoom: selectedRoomName,
+    fromRoom: selectedMyRoom,
+    tick: Game.time,
+    score: selectedScore,
+  });
 }
 
 brain.handleNextroomer = function() {
@@ -225,16 +309,20 @@ brain.handleNextroomer = function() {
   if (Memory.myRooms.length >= Game.gcl.level) {
     return;
   }
+
+  // Check more frequently (every 500 ticks vs CREEP_CLAIM_LIFE_TIME ~600)
   if (Game.time % config.nextRoom.intervalToCheck !== 0) {
     return;
   }
 
-  debugLog('nextroomer', 'handleNextroom !!!!!!!!!!!!!!!!!!!!!!!');
+  debugLog('nextroomer', 'handleNextroom - Checking for expansion opportunity');
+
   if (!haveEnoughSystemResources()) {
+    debugLog('nextroomer', 'Insufficient system resources for expansion');
     return;
   }
 
-  debugLog('nextroomer', 'handleNextroomer');
+  debugLog('nextroomer', 'handleNextroomer - System resources OK');
 
   const possibleRooms = Object.keys(global.data.rooms).filter(isClaimableRoom);
   if (possibleRooms.length > 0) {
@@ -242,9 +330,25 @@ brain.handleNextroomer = function() {
     return;
   }
 
+  // Spawn scouts to find new rooms (from rooms with healthy economy)
   for (const roomName of Memory.myRooms) {
     const room = Game.rooms[roomName];
-    room.debugLog('nextroomer', `brain.handleNextroomer spawn scout to find claimable rooms`);
-    room.checkRoleToSpawn('scout');
+    if (!room) {
+      continue;
+    }
+
+    // Only spawn scouts from economically healthy rooms
+    if (config.economy.enabled && room.data.economy) {
+      if (room.data.economy.status === 'HEALTHY' ||
+          room.data.economy.status === 'WEALTHY' ||
+          room.data.economy.status === 'ABUNDANT') {
+        room.debugLog('nextroomer', `Spawning scout to find claimable rooms`);
+        room.checkRoleToSpawn('scout');
+      }
+    } else {
+      // Fallback if economy brain not available
+      room.debugLog('nextroomer', `Spawning scout to find claimable rooms`);
+      room.checkRoleToSpawn('scout');
+    }
   }
 };

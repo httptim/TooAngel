@@ -68,6 +68,7 @@ global.config = {
     baseBuilding: false,
     diplomacy: false,
     economy: false,
+    remoteMining: false,
     getPartsConfLogs: false,
     queue: false,
     spawn: false,
@@ -122,28 +123,26 @@ global.config = {
   },
 
   nextRoom: {
-    scoutMinControllerLevel: 4,
-    intervalToCheck: CREEP_CLAIM_LIFE_TIME,
-    maxRooms: 8,
-    cpuPerRoom: 13, // Necessary CPU per room, prevent claiming new rooms
-    // creep max run distance for next room
-    // if terminal should send energy rooms should be close
-    maxDistance: 10,
-    minNewRoomDistance: 2,
-    minEnergyForActive: 1000,
-    notify: false,
+    scoutMinControllerLevel: 3,     // Start scouting earlier (was 4)
+    intervalToCheck: 500,            // Check every 500 ticks (was CREEP_CLAIM_LIFE_TIME ~600)
+    maxRooms: 20,                    // Increase room cap (was 8)
+    cpuPerRoom: 12,                  // Slightly optimized (was 13)
+    maxDistance: 15,                 // Allow further expansion (was 10)
+    minNewRoomDistance: 1,           // Allow adjacent rooms (was 2)
+    minEnergyForActive: 500,         // Lower threshold (was 1000)
+    notify: true,                    // Get notified of expansions (was false)
     mineralValues: {
-      [RESOURCE_HYDROGEN]: 15,
-      [RESOURCE_OXYGEN]: 10,
-      [RESOURCE_UTRIUM]: 15,
-      [RESOURCE_KEANIUM]: 15,
-      [RESOURCE_LEMERGIUM]: 15,
-      [RESOURCE_ZYNTHIUM]: 15,
-      [RESOURCE_CATALYST]: 10,
+      [RESOURCE_HYDROGEN]: 20,       // Increased (was 15)
+      [RESOURCE_OXYGEN]: 15,         // Increased (was 10)
+      [RESOURCE_UTRIUM]: 20,         // Increased (was 15)
+      [RESOURCE_KEANIUM]: 20,        // Increased (was 15)
+      [RESOURCE_LEMERGIUM]: 20,      // Increased (was 15)
+      [RESOURCE_ZYNTHIUM]: 20,       // Increased (was 15)
+      [RESOURCE_CATALYST]: 15,       // Increased (was 10)
     },
     resourceStats: true,
     resourceStatsDivider: 10000,
-    distanceFactor: 2,
+    distanceFactor: 1.5,             // Reduce distance penalty (was 2)
   },
 
   carryHelpers: {

@@ -6,6 +6,7 @@ require('./brain_economy');
 require('./brain_memory');
 require('./brain_memory_market');
 require('./brain_nextroom');
+require('./brain_remote_mining');
 require('./brain_squadmanager');
 require('./brain_stats');
 require('./find');
