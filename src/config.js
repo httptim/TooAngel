@@ -30,7 +30,7 @@ global.config = {
   },
 
   quests: {
-    enabled: true,
+    enabled: false,
     endTime: 10000,
     signControllerPercentage: 0.1,
     checkInterval: 100,
@@ -45,7 +45,7 @@ global.config = {
   },
 
   info: {
-    signController: true,
+    signController: false,
     signText: 'Fully automated open source NPC: http://tooangel.github.io/screeps/',
     resignInterval: 500,
   },
@@ -356,6 +356,12 @@ global.config = {
   },
 
   maliciousNpcUsernames: ['Invader', 'Source Keeper'],
+
+  // Traffic Manager Configuration
+  trafficManager: {
+    enabled: true,
+    excludedRoles: ['sourcer', 'extractor'],
+  },
 };
 
 try {

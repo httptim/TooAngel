@@ -93,6 +93,12 @@ Room.prototype.execute = function() {
     for (const creep of this.findMyCreeps()) {
       creep.handle();
     }
+    
+    // Resolve traffic after all creeps have registered their moves
+    if (this.isMy()) {
+      this.resolveTraffic();
+    }
+    
     return returnCode;
   } catch (err) {
     this.log('Executing room failed: ' + this.name + ' ' + err + ' ' + err.stack);

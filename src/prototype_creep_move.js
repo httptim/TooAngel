@@ -1,5 +1,102 @@
 'use strict';
 
+// =============================================================================
+// TRAFFIC MANAGER INTEGRATION
+// =============================================================================
+// Store the original move method
+if (!Creep.prototype._originalMove) {
+  Creep.prototype._originalMove = Creep.prototype.move;
+}
+
+// Override move to register intentions for traffic management
+Creep.prototype.move = function(target) {
+  // Check if traffic manager is enabled
+  if (!config.trafficManager || !config.trafficManager.enabled) {
+    return this._originalMove(target);
+  }
+
+  // Exclude certain roles from traffic management
+  const excludedRoles = config.trafficManager.excludedRoles || ['sourcer', 'extractor'];
+  if (this.memory && this.memory.role && excludedRoles.includes(this.memory.role)) {
+    return this._originalMove(target);
+  }
+
+  // Basic validation
+  if (!this.my) {
+    return ERR_NOT_OWNER;
+  }
+
+  if (this.spawning) {
+    return ERR_BUSY;
+  }
+
+  // Handle swapping with another creep
+  if (target && target instanceof Creep) {
+    if (!target.pos.isNearTo(this.pos)) {
+      return ERR_NOT_IN_RANGE;
+    }
+    return this._originalMove(target);
+  }
+
+  if (this.fatigue > 0) {
+    return ERR_TIRED;
+  }
+
+  if (this.getActiveBodyparts(MOVE) === 0) {
+    return ERR_NO_BODYPART;
+  }
+
+  // Register the intended movement
+  this._registerTrafficMove(target);
+
+  return OK;
+};
+
+// Helper to register intended movement
+Creep.prototype._registerTrafficMove = function(target) {
+  const targetCoord = typeof target === 'number' ? 
+    this._getDirectionTarget(target) : 
+    target;
+  
+  this._intendedPackedCoord = this._packCoordinates(targetCoord);
+};
+
+// Helper to get target position from direction
+Creep.prototype._getDirectionTarget = function(direction) {
+  const DIRECTION_DELTA = {
+    [TOP]: { x: 0, y: -1 },
+    [TOP_RIGHT]: { x: 1, y: -1 },
+    [RIGHT]: { x: 1, y: 0 },
+    [BOTTOM_RIGHT]: { x: 1, y: 1 },
+    [BOTTOM]: { x: 0, y: 1 },
+    [BOTTOM_LEFT]: { x: -1, y: 1 },
+    [LEFT]: { x: -1, y: 0 },
+    [TOP_LEFT]: { x: -1, y: -1 },
+  };
+  
+  const delta = DIRECTION_DELTA[direction];
+  return {
+    x: Math.max(0, Math.min(49, this.pos.x + delta.x)),
+    y: Math.max(0, Math.min(49, this.pos.y + delta.y)),
+  };
+};
+
+// Helper to pack coordinates
+Creep.prototype._packCoordinates = function(coord) {
+  return 50 * coord.y + coord.x;
+};
+
+// Helper to unpack coordinates
+Creep.prototype._unpackCoordinates = function(packedCoord) {
+  const x = packedCoord % 50;
+  const y = (packedCoord - x) / 50;
+  return { x, y };
+};
+
+// =============================================================================
+// ORIGINAL TOOANGEL MOVEMENT CODE
+// =============================================================================
+
 /**
  * searchPath uses PathFinder and the room costMatrix to search for a path
  *

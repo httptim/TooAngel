@@ -36,6 +36,7 @@ require('./prototype_string');
 require('./prototype_structure');
 require('./prototype_structureController');
 require('./prototype_structureStorage');
+require('./traffic_resolver');
 require('./role_atkeeper');
 require('./role_atkeepermelee');
 require('./role_attackunreserve');
