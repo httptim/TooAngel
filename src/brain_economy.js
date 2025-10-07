@@ -62,21 +62,30 @@ function getEconomicStatus(room) {
  * @return {number} - Energy per tick
  */
 function calculateIncomeRate(room) {
+  // For rooms without storage (RCL < 4), estimate based on sources
+  if (!room.storage) {
+    // Each source produces 3000 energy per 300 ticks = 10 energy/tick
+    const sources = room.find(FIND_SOURCES);
+    return sources.length * 10; // Approximate: 10 energy/tick per source
+  }
+
   if (!room.data.economyStats) {
     room.data.economyStats = {
-      lastEnergy: room.storage ? room.storage.store[RESOURCE_ENERGY] : 0,
+      lastEnergy: room.storage.store[RESOURCE_ENERGY],
       lastTick: Game.time,
       incomeRate: 0,
     };
+    return 0; // First tick, no data yet
   }
 
   const stats = room.data.economyStats;
-  const currentEnergy = room.storage ? room.storage.store[RESOURCE_ENERGY] : 0;
+  const currentEnergy = room.storage.store[RESOURCE_ENERGY];
   const ticksPassed = Game.time - stats.lastTick;
 
+  // Update every 100 ticks
   if (ticksPassed >= 100) {
-    const energyGained = currentEnergy - stats.lastEnergy;
-    stats.incomeRate = energyGained / ticksPassed;
+    const energyChange = currentEnergy - stats.lastEnergy;
+    stats.incomeRate = energyChange / ticksPassed;
     stats.lastEnergy = currentEnergy;
     stats.lastTick = Game.time;
   }
@@ -90,6 +99,15 @@ function calculateIncomeRate(room) {
  * @return {boolean} - Can support expansion
  */
 function canSupportExpansion(room) {
+  // Early game (no storage yet): Only expand if RCL 4+ and spawns are idle
+  if (!room.storage) {
+    if (room.controller.level < 4) {
+      return false; // Too early, focus on first room
+    }
+    // Check if room has excess energy capacity
+    return room.energyAvailable >= room.energyCapacityAvailable * 0.8;
+  }
+
   const status = getEconomicStatus(room);
   const incomeRate = calculateIncomeRate(room);
   const targetIncome = INCOME_TARGETS[`RCL_${room.controller.level}`] || 5;

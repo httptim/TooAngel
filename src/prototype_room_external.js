@@ -596,22 +596,42 @@ Room.prototype.handleUnreservedRoomWithReservation = function() {
     return false;
   }
 
-  // Give up reservation on spawnIdle
   const room = Game.rooms[reservation.base];
-  if (room.memory.spawnIdle < config.room.reserveSpawnIdleThreshold) {
-    this.debugLog('reserver', `Discarding reservation in ${this.name} - base spawnIdle threshold not met ${room.memory.spawnIdle} (${room.name}) < ${config.room.reserveSpawnIdleThreshold}`);
+
+  // EARLY GAME (RCL 1-3): Very lenient - just spawn if we have energy
+  if (room.controller.level < 4) {
+    this.debugLog('reserver', `Early game remote mining from ${room.name} (RCL ${room.controller.level})`);
+    this.data.state = 'Reserved';
+    // Don't spawn reserver at RCL 1-2, just spawn sourcers
+    if (room.controller.level >= 2) {
+      this.checkAndSpawnReserver();
+    }
+    this.checkSourcer();
+    return true;
+  }
+
+  // MID-LATE GAME (RCL 4+): Use stricter thresholds
+  // Give up reservation on spawnIdle (but lower threshold from 0.2 to 0.1)
+  if (room.memory.spawnIdle < 0.1) {
+    this.debugLog('reserver', `Discarding reservation in ${this.name} - base spawnIdle threshold not met ${room.memory.spawnIdle} (${room.name}) < 0.1`);
     delete this.data.reservation;
     return false;
   }
 
-  // Give up reservation on unHealthyBase
-  if (!room.isHealthy()) {
+  // Give up reservation on unHealthyBase (but allow LOW economy)
+  if (config.economy.enabled && room.data.economy) {
+    if (room.data.economy.status === 'EMERGENCY' || room.data.economy.status === 'CRITICAL') {
+      this.debugLog('reserver', `Discarding reservation in ${this.name} - base (${room.name}) economy is ${room.data.economy.status}`);
+      delete this.data.reservation;
+      return false;
+    }
+  } else if (!room.isHealthy()) {
     this.debugLog('reserver', `Discarding reservation in ${this.name} - base (${room.name}) is unhealthy`);
     delete this.data.reservation;
     return false;
   }
 
-  this.debugLog('reserver', `handleUnreservedRoom reserved room - send creeps from ${room.name} spawnIdle ${room.memory.spawnIdle} < ${config.room.reserveSpawnIdleThreshold}`);
+  this.debugLog('reserver', `handleUnreservedRoom reserved room - send creeps from ${room.name} spawnIdle ${room.memory.spawnIdle}`);
 
   this.data.state = 'Reserved';
   this.checkAndSpawnReserver();
@@ -704,15 +724,37 @@ function spawnCreepsForReservation(reservationCandidate) {
       continue;
     }
 
-    if (room.memory.spawnIdle < config.room.reserveSpawnIdleThreshold) {
+    // EARLY GAME (RCL 1-3): Much more lenient
+    if (room.controller.level < 4) {
+      // Only check basic distance (within 2 rooms)
+      if (Game.map.getRoomLinearDistance(reservationCandidate.name, roomName) > 2) {
+        continue;
+      }
+
+      // Just need 300 energy available
+      if (room.energyAvailable < 300) {
+        continue;
+      }
+
+      // Set reservation and return
+      reservationCandidate.data.reservation = {
+        base: room.name,
+        created: Game.time,
+      };
+      reservationCandidate.debugLog('reserver', `Early game reservation created from ${room.name} (RCL ${room.controller.level})`);
+      return true;
+    }
+
+    // MID-LATE GAME (RCL 4+): Use normal thresholds (but lowered from 0.2 to 0.1)
+    if (room.memory.spawnIdle < 0.1) {
       continue;
     }
 
-    if (getReserveRoomDistanceThreshold(reservationCandidate, room) < 1) {
+    if (getReserveRoomDistanceThreshold(reservationCandidate, room) < 0.5) {
       continue;
     }
 
-    if (getReserveRouteDistanceThreshold(reservationCandidate, room) < 1) {
+    if (getReserveRouteDistanceThreshold(reservationCandidate, room) < 0.5) {
       continue;
     }
 

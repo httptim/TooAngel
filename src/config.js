@@ -19,18 +19,18 @@ global.config = {
   },
   visualizer: {
     enabled: false,
-    showRoomPaths: false,
+    showRoomPaths: true,
     showCreepPaths: false,
     showPathSearches: false,
-    showStructures: false,
+    showStructures: true,
     showCreeps: false,
-    showBlockers: false,
+    showBlockers: true,
     showCostMatrices: false,
     showCostMatrixValues: false,
   },
 
   quests: {
-    enabled: true,
+    enabled: false,
     endTime: 10000,
     signControllerPercentage: 0.1,
     checkInterval: 100,
@@ -45,7 +45,7 @@ global.config = {
   },
 
   info: {
-    signController: true,
+    signController: false,
     signText: 'Fully automated open source NPC: http://tooangel.github.io/screeps/',
     resignInterval: 500,
   },
@@ -67,8 +67,8 @@ global.config = {
     attack: true,
     baseBuilding: false,
     diplomacy: false,
-    economy: false,
-    remoteMining: false,
+    economy: true,
+    remoteMining: true,
     getPartsConfLogs: false,
     queue: false,
     spawn: false,

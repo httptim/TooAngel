@@ -66,8 +66,8 @@ brain.manageRemoteMining = function() {
     Memory.remoteMining = {};
   }
 
-  // Run every 1000 ticks
-  if (Game.time % 1000 !== 0) {
+  // Run every 500 ticks (more aggressive)
+  if (Game.time % 500 !== 0) {
     return;
   }
 
@@ -79,16 +79,44 @@ brain.manageRemoteMining = function() {
       continue;
     }
 
-    // Only assign remote mining if economy is healthy
+    // Start remote mining EARLY! Even at RCL 1
+    const rcl = room.controller.level;
+
+    // Early game logic (RCL 1-3): Very aggressive, essential for growth
+    if (rcl < 4) {
+      // Only need basic check - has at least 300 energy available
+      if (room.energyAvailable < 300) {
+        debugLog('remoteMining', `${baseRoom}: RCL ${rcl} but not enough energy (${room.energyAvailable})`);
+        continue;
+      }
+
+      // Find targets
+      const targets = findRemoteMiningTargets(baseRoom, 2); // Shorter distance for early game
+
+      if (!Memory.remoteMining[baseRoom]) {
+        Memory.remoteMining[baseRoom] = [];
+      }
+
+      // RCL 1-3: Only assign 1 remote room (focus on one extra source)
+      Memory.remoteMining[baseRoom] = targets
+        .slice(0, 1)
+        .map((t) => t.roomName);
+
+      debugLog('remoteMining', `${baseRoom}: RCL ${rcl} - Assigned ${Memory.remoteMining[baseRoom].length} remote rooms: ${Memory.remoteMining[baseRoom].join(', ')}`);
+      continue;
+    }
+
+    // Mid-late game logic (RCL 4+): Use economy brain if available
     if (config.economy.enabled && room.data.economy) {
       const status = room.data.economy.status;
-      if (status !== 'HEALTHY' && status !== 'WEALTHY' && status !== 'ABUNDANT') {
+      // More lenient: Allow LOW status (30k+ energy)
+      if (status === 'EMERGENCY' || status === 'CRITICAL') {
         debugLog('remoteMining', `${baseRoom}: Economy not ready (${status})`);
         continue;
       }
     } else {
-      // Fallback: check storage
-      if (!room.storage || room.storage.store[RESOURCE_ENERGY] < 50000) {
+      // Fallback: just need some energy
+      if (room.storage && room.storage.store[RESOURCE_ENERGY] < 10000) {
         continue;
       }
     }
@@ -100,13 +128,21 @@ brain.manageRemoteMining = function() {
       Memory.remoteMining[baseRoom] = [];
     }
 
-    // Assign up to 2-3 remote rooms per base (based on RCL)
-    const maxRemotes = room.controller.level >= 6 ? 3 : 2;
+    // Assign based on RCL: more rooms at higher levels
+    let maxRemotes = 1;
+    if (rcl >= 7) {
+      maxRemotes = 4;
+    } else if (rcl >= 5) {
+      maxRemotes = 3;
+    } else if (rcl >= 4) {
+      maxRemotes = 2;
+    }
+
     Memory.remoteMining[baseRoom] = targets
       .slice(0, maxRemotes)
       .map((t) => t.roomName);
 
-    debugLog('remoteMining', `${baseRoom}: Assigned ${Memory.remoteMining[baseRoom].length} remote rooms: ${Memory.remoteMining[baseRoom].join(', ')}`);
+    debugLog('remoteMining', `${baseRoom}: RCL ${rcl} - Assigned ${Memory.remoteMining[baseRoom].length} remote rooms: ${Memory.remoteMining[baseRoom].join(', ')}`);
   }
 };
 
