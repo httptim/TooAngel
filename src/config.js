@@ -30,7 +30,7 @@ global.config = {
   },
 
   quests: {
-    enabled: true,
+    enabled: false,
     endTime: 10000,
     signControllerPercentage: 0.1,
     checkInterval: 100,
@@ -45,7 +45,7 @@ global.config = {
   },
 
   info: {
-    signController: true,
+    signController: false,
     signText: 'Fully automated open source NPC: http://tooangel.github.io/screeps/',
     resignInterval: 500,
   },
@@ -98,12 +98,14 @@ global.config = {
   },
 
   autoAttack: {
-    notify: true,
-    minAttackRCL: 6,
-    timeBetweenAttacks: 2000,
+    notify: false,                // Don't notify, just attack
+    minAttackRCL: 3,              // Reduced from 6 for early aggression
+    timeBetweenAttacks: 100,      // Reduced from 2000 for continuous pressure
     noReservedRoomMinMyRCL: 5,
     noReservedRoomInRange: 1,
     noReservedRoomInterval: 1600,
+    attackWeakRooms: true,        // Target vulnerable rooms
+    breakReservations: true,      // Break all enemy reservations
   },
 
   revive: {
@@ -111,8 +113,28 @@ global.config = {
     nextroomerInterval: 400,
   },
 
+  aggression: {
+    enabled: true,
+    minRCL: 3,                    // Start aggression at RCL 3
+    scoutElimination: true,       // Kill all scouts
+    remoteRoomTakeover: true,     // Take profitable remote rooms
+    profitThreshold: 1.3,         // Minimum ROI for attacks
+    retaliationPrep: true,        // Prepare defenses before attacking
+    continuousPressure: true,     // Never stop attacking
+    peacefulPlayers: [],          // Empty - no one is safe
+    checkInterval: 100,           // Check for targets every 100 ticks
+  },
+
+  earlyExpansion: {
+    enabled: true,
+    maxEarlyHarvestersPerRoom: 6, // Max early harvesters per base room
+    startAtRCL: 2, // Start expansion at RCL 2
+    maxDistance: 2, // Only expand to adjacent/nearby rooms
+    checkInterval: 10, // Check every 10 ticks
+  },
+
   nextRoom: {
-    scoutMinControllerLevel: 4,
+    scoutMinControllerLevel: 2,  // Reduced from 4 for early scouting
     intervalToCheck: CREEP_CLAIM_LIFE_TIME,
     maxRooms: 8,
     cpuPerRoom: 13, // Necessary CPU per room, prevent claiming new rooms
@@ -224,7 +246,7 @@ global.config = {
   },
 
   room: {
-    reserveSpawnIdleThreshold: 0.2,
+    reserveSpawnIdleThreshold: 0.05, // Reduced from 0.2 for earlier expansion
     spawnIdle: 0.1,
     nextroomerSpawnIdleThreshold: 0.05,
     spawnIdleFactor: 0.001,
@@ -232,7 +254,7 @@ global.config = {
     handleNukeAttackInterval: 132,
     reviveEnergyCapacity: 1000,
     reviveEnergyAvailable: 1000,
-    scoutInterval: 1499,
+    scoutInterval: 300,  // Reduced from 1499 for more frequent scouting
     scout: true,
     upgraderMinStorage: 0,
     upgraderStorageFactor: 2,
@@ -311,6 +333,7 @@ global.config = {
     },
     otherRoom: {
       claimer: 6,
+      earlyharvester: 7,  // High priority for early expansion
       universal: 11,
       defender: 12,
       defendranged: 13,

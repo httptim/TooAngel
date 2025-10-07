@@ -4,6 +4,7 @@ const {checkPlayers} = require('./diplomacy');
 const {handleQuests} = require('./quests_host');
 const {prepareMemory} = require('./brain_memory');
 const {handleSquadManager} = require('./brain_squadmanager');
+const {handleEarlyExpansion} = require('./brain_earlyexpansion');
 
 global.cpuUsed = 0;
 
@@ -99,6 +100,10 @@ module.exports.execute = function() {
   try {
     prepareMemory();
     brain.buyPower();
+    // Handle early expansion before normal expansion
+    if (config.earlyExpansion.enabled) {
+      handleEarlyExpansion();
+    }
     brain.handleNextroomer();
     handleSquadManager();
     brain.handleIncomingTransactions();

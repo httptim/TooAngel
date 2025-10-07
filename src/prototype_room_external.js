@@ -596,16 +596,17 @@ Room.prototype.handleUnreservedRoomWithReservation = function() {
     return false;
   }
 
-  // Give up reservation on spawnIdle
+  // Give up reservation on spawnIdle - but be more lenient for early game
   const room = Game.rooms[reservation.base];
-  if (room.memory.spawnIdle < config.room.reserveSpawnIdleThreshold) {
-    this.debugLog('reserver', `Discarding reservation in ${this.name} - base spawnIdle threshold not met ${room.memory.spawnIdle} (${room.name}) < ${config.room.reserveSpawnIdleThreshold}`);
+  const threshold = room.controller.level <= 4 ? 0.01 : config.room.reserveSpawnIdleThreshold;
+  if (room.memory.spawnIdle < threshold) {
+    this.debugLog('reserver', `Discarding reservation in ${this.name} - base spawnIdle threshold not met ${room.memory.spawnIdle} (${room.name}) < ${threshold}`);
     delete this.data.reservation;
     return false;
   }
 
-  // Give up reservation on unHealthyBase
-  if (!room.isHealthy()) {
+  // Give up reservation on unHealthyBase - but be more lenient for early game
+  if (!room.isHealthy() && room.controller.level > 4) {
     this.debugLog('reserver', `Discarding reservation in ${this.name} - base (${room.name}) is unhealthy`);
     delete this.data.reservation;
     return false;
@@ -704,7 +705,9 @@ function spawnCreepsForReservation(reservationCandidate) {
       continue;
     }
 
-    if (room.memory.spawnIdle < config.room.reserveSpawnIdleThreshold) {
+    // Be more lenient with spawn idle in early game
+    const idleThreshold = room.controller.level <= 4 ? 0.01 : config.room.reserveSpawnIdleThreshold;
+    if (room.memory.spawnIdle < idleThreshold) {
       continue;
     }
 
