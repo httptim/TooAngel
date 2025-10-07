@@ -29,6 +29,11 @@ function findRemoteMiningTargets(baseRoom, maxDistance = 3) {
       continue;
     }
 
+    // Skip rooms marked to avoid (hostile)
+    if (Memory.avoidRooms && Memory.avoidRooms[roomName] && Memory.avoidRooms[roomName] > Game.time) {
+      continue;
+    }
+
     // Must have sources
     if (!data.sources || data.sources === 0) {
       continue;
@@ -143,6 +148,50 @@ brain.manageRemoteMining = function() {
       .map((t) => t.roomName);
 
     debugLog('remoteMining', `${baseRoom}: RCL ${rcl} - Assigned ${Memory.remoteMining[baseRoom].length} remote rooms: ${Memory.remoteMining[baseRoom].join(', ')}`);
+  }
+};
+
+/**
+ * Spawn scouts for remote mining targets that haven't been seen recently
+ * @return {void}
+ */
+brain.spawnScoutsForRemoteMining = function() {
+  if (!Memory.remoteMining) {
+    return;
+  }
+
+  for (const baseRoom in Memory.remoteMining) {
+    const room = Game.rooms[baseRoom];
+    if (!room) {
+      continue;
+    }
+
+    // Check each assigned remote room
+    for (const targetRoom of Memory.remoteMining[baseRoom]) {
+      // Check if we have recent visibility
+      const roomData = global.data.rooms[targetRoom];
+      const lastSeen = roomData ? roomData.lastSeen : 0;
+      const ticksSinceSeen = Game.time - lastSeen;
+
+      // If room hasn't been seen in last 1000 ticks or never seen
+      if (!lastSeen || ticksSinceSeen > 1000) {
+        // Check if we already have a scout heading there
+        const scouts = room.findCreepsOfRole('scout');
+        let scoutAssigned = false;
+        for (const scout of scouts) {
+          if (scout.memory.target === targetRoom) {
+            scoutAssigned = true;
+            break;
+          }
+        }
+
+        if (!scoutAssigned) {
+          // Spawn a scout with specific target
+          debugLog('remoteMining', `${baseRoom}: Spawning scout for remote mining target ${targetRoom} (last seen: ${ticksSinceSeen} ticks ago)`);
+          room.checkRoleToSpawn('scout', 1, undefined, targetRoom);
+        }
+      }
+    }
   }
 };
 

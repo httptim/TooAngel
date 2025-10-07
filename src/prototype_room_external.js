@@ -789,6 +789,35 @@ Room.prototype.handleUnreservedRoom = function() {
     return this.handleUnreservedRoomWithReservation();
   }
 
+  // Check if this room is assigned in Memory.remoteMining
+  if (Memory.remoteMining) {
+    for (const baseRoom in Memory.remoteMining) {
+      if (Memory.remoteMining[baseRoom].includes(this.name)) {
+        // Check if room is safe before assigning
+        const hostileCreeps = this.find(FIND_HOSTILE_CREEPS);
+        const hostileStructures = this.find(FIND_HOSTILE_STRUCTURES, {
+          filter: (s) => s.structureType !== STRUCTURE_CONTROLLER && s.structureType !== STRUCTURE_KEEPER_LAIR
+        });
+
+        if (hostileCreeps.length > 0 || hostileStructures.length > 0) {
+          this.debugLog('reserver', `Remote mining target ${this.name} has hostiles! Skipping reservation.`);
+          // Mark as hostile in memory so we don't keep trying
+          if (!Memory.hostileRooms) Memory.hostileRooms = {};
+          Memory.hostileRooms[this.name] = Game.time;
+          continue;
+        }
+
+        // Room is safe, proceed with reservation
+        this.data.reservation = {
+          base: baseRoom,
+          created: Game.time,
+        };
+        this.debugLog('reserver', `Remote mining assignment: ${this.name} assigned to ${baseRoom} (room confirmed safe)`);
+        return this.handleUnreservedRoomWithReservation();
+      }
+    }
+  }
+
   spawnCreepsForReservation(this);
 
   return true;
