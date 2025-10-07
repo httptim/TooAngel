@@ -1,5 +1,4 @@
 'use strict';
-const trafficManager = require('./traffic_manager');
 
 /**
  * The data property represent the current data of the room stored on the heap
@@ -94,13 +93,6 @@ Room.prototype.execute = function() {
     for (const creep of this.findMyCreeps()) {
       creep.handle();
     }
-    
-    // Run traffic manager after all creeps have been processed
-    if (this.isMy()) {
-      const costs = this.getCostMatrixCallback()(this.name);
-      trafficManager.run(this, costs);
-    }
-    
     return returnCode;
   } catch (err) {
     this.log('Executing room failed: ' + this.name + ' ' + err + ' ' + err.stack);

@@ -1,6 +1,5 @@
 require('./config');
 require('./logging');
-require('./traffic_manager');
 require('./utils');
 require('./brain_main');
 require('./brain_memory');
