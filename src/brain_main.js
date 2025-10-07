@@ -98,6 +98,9 @@ module.exports.execute = function() {
   Memory.time = Game.time;
   try {
     prepareMemory();
+    if (config.economy.enabled) {
+      brain.evaluateEconomy();
+    }
     brain.buyPower();
     brain.handleNextroomer();
     handleSquadManager();

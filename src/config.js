@@ -67,6 +67,7 @@ global.config = {
     attack: true,
     baseBuilding: false,
     diplomacy: false,
+    economy: false,
     getPartsConfLogs: false,
     queue: false,
     spawn: false,
@@ -90,6 +91,15 @@ global.config = {
     commodities: true,
     memory: true,
     boosts: false,
+  },
+
+  economy: {
+    enabled: true,
+    targetReserves: 50000,      // Target storage level before expansion
+    wealthyThreshold: 100000,   // Enable aggressive actions
+    emergencyThreshold: 10000,  // Survival mode
+    upgraderFactor: 2,          // Energy per WORK part per lifetime
+    maxUpgraders: 15,           // Cap upgraders to prevent over-allocation
   },
 
   tower: {

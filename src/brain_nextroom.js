@@ -3,6 +3,7 @@
 
 const {debugLog} = require('./logging');
 const {findRoomsWithinReach} = require('./helper_findMyRooms');
+const {canSupportExpansion} = require('./brain_economy');
 
 /**
  * isClaimableRoom - Checks if a room is claimable
@@ -54,13 +55,87 @@ function getMinLinearDistanceToMyRooms(roomName) {
 }
 
 /**
+ * Advanced room scoring system
+ * @param {string} roomName - Room to score
+ * @param {string} originRoom - Room expanding from
+ * @return {number} - Higher is better
+ */
+function scoreClaimableRoom(roomName, originRoom) {
+  const data = global.data.rooms[roomName];
+  if (!data) {
+    return 0;
+  }
+
+  let score = 0;
+
+  // Source count (most important)
+  score += data.sources * 5000;
+
+  // Mineral value
+  const mineralValue = config.nextRoom.mineralValues[data.mineral] || 0;
+  score += mineralValue * 100;
+
+  // Distance penalty (closer is better)
+  const distance = Game.map.getRoomLinearDistance(roomName, originRoom);
+  score -= distance * 500;
+
+  // Highway rooms are valuable (easier to defend)
+  const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName);
+  if (parsed) {
+    const x = parseInt(parsed[2]);
+    const y = parseInt(parsed[4]);
+    if (x % 10 === 0 || y % 10 === 0) {
+      score += 1000; // Highway bonus
+    }
+    if (x % 10 === 5 && y % 10 === 5) {
+      score -= 2000; // Center room penalty (SK rooms nearby)
+    }
+  }
+
+  // Controller position bonus for corner/edge rooms (easier to defend)
+  if (data.controller && data.controller.pos) {
+    const controllerX = data.controller.pos.x;
+    const controllerY = data.controller.pos.y;
+    if (controllerX < 10 || controllerX > 40 || controllerY < 10 || controllerY > 40) {
+      score += 500; // Corner/edge bonus
+    }
+  }
+
+  // Prefer rooms adjacent to existing territory (easier to defend)
+  let adjacentToMine = false;
+  for (const myRoom of Memory.myRooms) {
+    if (Game.map.getRoomLinearDistance(roomName, myRoom) === 1) {
+      adjacentToMine = true;
+      break;
+    }
+  }
+  if (adjacentToMine) {
+    score += 2000;
+  }
+
+  return score;
+}
+
+/**
  * getNextRoomValuatedRoomMap - Evaluates rooms based on mineral and distance
  * and sort based on the value
  *
  * @param {array} rooms
+ * @param {string} originRoom - Room expanding from
  * @return {array}
  */
-function getNextRoomValuatedRoomMap(rooms) {
+function getNextRoomValuatedRoomMap(rooms, originRoom) {
+  // Use new scoring if originRoom provided
+  if (originRoom) {
+    const scoredRooms = rooms.map((roomName) => ({
+      roomName: roomName,
+      value: scoreClaimableRoom(roomName, originRoom),
+    }));
+    scoredRooms.sort((a, b) => b.value - a.value);
+    return scoredRooms;
+  }
+
+  // Fallback to old scoring
   const mineralValues = JSON.parse(JSON.stringify(config.nextRoom.mineralValues));
   for (const roomName of Memory.myRooms) {
     mineralValues[global.data.rooms[roomName].mineral] /= 2;

@@ -23,12 +23,8 @@ roles.upgrader.settings = {
 /**
  * updateSettings
  *
- * One work part one energy per tick multiplied by config value with  lifetime
- * So have at least a specific amount of energy in storage that the upgrader
- * can use.
- * Example with upgraderStorageFactor 2:
- * 6453 energy in storage are 2 workParts
- * 3000 energy will be put in the controller
+ * Uses the economy brain to determine optimal upgrader count based on
+ * room economic status and energy reserves
  *
  * @param {object} room
  * @return {boolean|{maxLayoutAmount: number}}
@@ -38,6 +34,20 @@ roles.upgrader.updateSettings = function(room) {
     return false;
   }
 
+  // Use economy brain's calculation if available and enabled
+  if (config.economy.enabled && room.data.economy) {
+    const targetUpgraders = room.data.economy.upgraderTarget;
+
+    if (config.debug.upgrader) {
+      room.log(`upgrader updateSettings - status: ${room.data.economy.status} income: ${room.data.economy.income.toFixed(1)}/tick targetUpgraders: ${targetUpgraders}`);
+    }
+
+    return {
+      maxLayoutAmount: Math.max(0, targetUpgraders - 1),
+    };
+  }
+
+  // Fallback to original logic if economy brain not available
   let workParts = Math.floor((room.storage.store.energy + 1) / (CREEP_LIFE_TIME * config.room.upgraderStorageFactor));
   if (room.controller.level === 8) {
     workParts = Math.min(workParts, CONTROLLER_MAX_UPGRADE_PER_TICK);
