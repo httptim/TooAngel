@@ -144,51 +144,20 @@ Room.prototype.handleLinksTransferEnergy = function(links, linkIndex, linkStorag
 
 Room.prototype.handleLinks = function() {
   const linkStorage = this.getLinkStorage();
-  if (!linkStorage) {
+  // Only send energy if linkStorage is set and free capacity is higher or equals than 400 Energy
+  if (!linkStorage || linkStorage.store.getFreeCapacity(RESOURCE_ENERGY) < 400) {
     return;
   }
 
-  // Don't fill storage link if room economy is struggling (if economy brain is enabled)
-  if (config.economy.enabled && this.data.economy) {
-    if (this.data.economy.status === 'CRITICAL' || this.data.economy.status === 'EMERGENCY') {
-      return;
-    }
-  }
-
-  // Only send energy if linkStorage has free capacity >= 400
-  const freeCapacity = linkStorage.store.getFreeCapacity(RESOURCE_ENERGY);
-  if (freeCapacity < 400) {
-    return;
-  }
-
-  // Find links with energy to transfer (only those with >400 energy)
   const links = this.findPropertyFilter(FIND_MY_STRUCTURES, 'structureType', [STRUCTURE_LINK], {
-    filter: (link) => link.id !== linkStorage.id && link.store[RESOURCE_ENERGY] > 400,
+    filter: (link) => link.id !== linkStorage.id,
   });
 
   if (links.length > 0) {
-    // Prioritize source links (positions 1 and 2 in memory)
-    let priorityLinks = [];
-    if (this.memory.position && this.memory.position.structure && this.memory.position.structure.link) {
-      const linkPos1 = this.memory.position.structure.link[1];
-      const linkPos2 = this.memory.position.structure.link[2];
-      priorityLinks = links.filter((link) => {
-        if (linkPos1 && link.pos.x === linkPos1.x && link.pos.y === linkPos1.y) {
-          return true;
-        }
-        if (linkPos2 && link.pos.x === linkPos2.x && link.pos.y === linkPos2.y) {
-          return true;
-        }
-        return false;
-      });
-    }
-
-    const linksToUse = priorityLinks.length > 0 ? priorityLinks : links;
-    const time = Game.time % (linksToUse.length * 12);
-    const linkIndex = Math.floor(time / 12);
-
-    if (time % 12 === 0 && linksToUse.length > linkIndex) {
-      this.handleLinksTransferEnergy(linksToUse, linkIndex, linkStorage);
+    const time = Game.time % (links.length * 12);
+    const linkIndex = (time / 12);
+    if (time % 12 === 0 && links.length - 1 >= linkIndex) {
+      this.handleLinksTransferEnergy(links, linkIndex, linkStorage);
     }
   }
 };

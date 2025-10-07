@@ -19,18 +19,18 @@ global.config = {
   },
   visualizer: {
     enabled: false,
-    showRoomPaths: true,
+    showRoomPaths: false,
     showCreepPaths: false,
     showPathSearches: false,
-    showStructures: true,
+    showStructures: false,
     showCreeps: false,
-    showBlockers: true,
+    showBlockers: false,
     showCostMatrices: false,
     showCostMatrixValues: false,
   },
 
   quests: {
-    enabled: false,
+    enabled: true,
     endTime: 10000,
     signControllerPercentage: 0.1,
     checkInterval: 100,
@@ -45,7 +45,7 @@ global.config = {
   },
 
   info: {
-    signController: false,
+    signController: true,
     signText: 'Fully automated open source NPC: http://tooangel.github.io/screeps/',
     resignInterval: 500,
   },
@@ -67,8 +67,6 @@ global.config = {
     attack: true,
     baseBuilding: false,
     diplomacy: false,
-    economy: true,
-    remoteMining: true,
     getPartsConfLogs: false,
     queue: false,
     spawn: false,
@@ -94,15 +92,6 @@ global.config = {
     boosts: false,
   },
 
-  economy: {
-    enabled: true,
-    targetReserves: 50000,      // Target storage level before expansion
-    wealthyThreshold: 100000,   // Enable aggressive actions
-    emergencyThreshold: 10000,  // Survival mode
-    upgraderFactor: 2,          // Energy per WORK part per lifetime
-    maxUpgraders: 15,           // Cap upgraders to prevent over-allocation
-  },
-
   tower: {
     healMyCreeps: true,
     repairStructures: false,
@@ -123,26 +112,28 @@ global.config = {
   },
 
   nextRoom: {
-    scoutMinControllerLevel: 3,     // Start scouting earlier (was 4)
-    intervalToCheck: 500,            // Check every 500 ticks (was CREEP_CLAIM_LIFE_TIME ~600)
-    maxRooms: 20,                    // Increase room cap (was 8)
-    cpuPerRoom: 12,                  // Slightly optimized (was 13)
-    maxDistance: 15,                 // Allow further expansion (was 10)
-    minNewRoomDistance: 1,           // Allow adjacent rooms (was 2)
-    minEnergyForActive: 500,         // Lower threshold (was 1000)
-    notify: true,                    // Get notified of expansions (was false)
+    scoutMinControllerLevel: 4,
+    intervalToCheck: CREEP_CLAIM_LIFE_TIME,
+    maxRooms: 8,
+    cpuPerRoom: 13, // Necessary CPU per room, prevent claiming new rooms
+    // creep max run distance for next room
+    // if terminal should send energy rooms should be close
+    maxDistance: 10,
+    minNewRoomDistance: 2,
+    minEnergyForActive: 1000,
+    notify: false,
     mineralValues: {
-      [RESOURCE_HYDROGEN]: 20,       // Increased (was 15)
-      [RESOURCE_OXYGEN]: 15,         // Increased (was 10)
-      [RESOURCE_UTRIUM]: 20,         // Increased (was 15)
-      [RESOURCE_KEANIUM]: 20,        // Increased (was 15)
-      [RESOURCE_LEMERGIUM]: 20,      // Increased (was 15)
-      [RESOURCE_ZYNTHIUM]: 20,       // Increased (was 15)
-      [RESOURCE_CATALYST]: 15,       // Increased (was 10)
+      [RESOURCE_HYDROGEN]: 15,
+      [RESOURCE_OXYGEN]: 10,
+      [RESOURCE_UTRIUM]: 15,
+      [RESOURCE_KEANIUM]: 15,
+      [RESOURCE_LEMERGIUM]: 15,
+      [RESOURCE_ZYNTHIUM]: 15,
+      [RESOURCE_CATALYST]: 10,
     },
     resourceStats: true,
     resourceStatsDivider: 10000,
-    distanceFactor: 1.5,             // Reduce distance penalty (was 2)
+    distanceFactor: 2,
   },
 
   carryHelpers: {

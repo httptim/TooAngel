@@ -98,12 +98,6 @@ module.exports.execute = function() {
   Memory.time = Game.time;
   try {
     prepareMemory();
-    if (config.economy.enabled) {
-      brain.evaluateEconomy();
-    }
-    brain.manageRemoteMining();
-    brain.spawnScoutsForRemoteMining();  // Scout remote targets BEFORE spawning harvesters
-    brain.handleHostileRooms();  // Process hostile room reports and coordinate responses
     brain.buyPower();
     brain.handleNextroomer();
     handleSquadManager();
