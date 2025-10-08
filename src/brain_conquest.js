@@ -532,6 +532,17 @@ brain.monitorConquest = function() {
     // Check victory conditions
     if (room.controller && room.controller.my) {
       debugLog('conquest', `VICTORY! Conquered ${roomName}`);
+
+      // Track conquest history for domination phase
+      if (!Memory.conquestHistory) {
+        Memory.conquestHistory = {};
+      }
+      Memory.conquestHistory[roomName] = {
+        conqueredAt: Game.time,
+        phase: 'OCCUPIED',
+        profit: 0 // Will be updated as resources are extracted
+      };
+
       delete Memory.conquestTargets[roomName];
       continue;
     }
@@ -558,11 +569,19 @@ brain.monitorConquest = function() {
        creep.memory.role === 'autoattackmelee' || creep.memory.role === 'dismantler')
     );
 
-    // Reinforce if needed
-    if (attackers.length < 3 && conquest.phase !== 'complete') {
+    // Use wave spawning system instead of individual spawns
+    if (brain.spawnAttackWave) {
       const launchRoom = findBestLaunchRoom(roomName);
-      if (launchRoom && launchRoom.energyAvailable >= 1000) {
-        launchRoom.checkRoleToSpawn('defender', 1, undefined, roomName);
+      if (launchRoom) {
+        brain.spawnAttackWave(roomName, launchRoom);
+      }
+    } else {
+      // Fallback to old system if coordinator not available
+      if (attackers.length < 3 && conquest.phase !== 'complete') {
+        const launchRoom = findBestLaunchRoom(roomName);
+        if (launchRoom && launchRoom.energyAvailable >= 1000) {
+          launchRoom.checkRoleToSpawn('defender', 1, undefined, roomName);
+        }
       }
     }
 

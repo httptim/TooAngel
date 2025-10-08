@@ -287,6 +287,12 @@ function findWeakNeighbors() {
       continue;
     }
 
+    // Skip rooms in safe mode
+    if (roomData.safeMode && roomData.safeMode > Game.time) {
+      console.log(`Skipping ${roomName} - in safe mode for ${roomData.safeMode - Game.time} ticks`);
+      continue;
+    }
+
     // Check if it's weak
     if (brain.isRoomWeak && brain.isRoomWeak(roomName)) {
       // Calculate distance to our nearest room
@@ -396,6 +402,20 @@ function launchAttack(fromRoom, targetRoom, strategy) {
   const room = Game.rooms[fromRoom];
   if (!room) return;
 
+  // Check if target is in safe mode
+  if (Memory.safeModeRooms && Memory.safeModeRooms[targetRoom]) {
+    if (Memory.safeModeRooms[targetRoom] > Game.time) {
+      console.log(`Aborting attack on ${targetRoom} - in safe mode for ${Memory.safeModeRooms[targetRoom] - Game.time} more ticks`);
+      // Remove from attack targets
+      if (Memory.attackTargets && Memory.attackTargets[targetRoom]) {
+        delete Memory.attackTargets[targetRoom];
+      }
+      return;
+    }
+    // Safe mode expired
+    delete Memory.safeModeRooms[targetRoom];
+  }
+
   console.log(`Launching ${strategy} attack from ${fromRoom} to ${targetRoom}`);
 
   // Record attack
@@ -415,8 +435,11 @@ function launchAttack(fromRoom, targetRoom, strategy) {
       room.checkRoleToSpawn('defender', 3, undefined, targetRoom);
       break;
     case 'COORDINATED_ASSAULT':
-      room.checkRoleToSpawn('defender', 4, undefined, targetRoom);
-      room.checkRoleToSpawn('healer', 2, undefined, targetRoom);
+      // Spawn a balanced squad composition
+      room.checkRoleToSpawn('attacker', 2, undefined, targetRoom);
+      room.checkRoleToSpawn('defender', 2, undefined, targetRoom);
+      room.checkRoleToSpawn('squadheal', 2, undefined, targetRoom);
+      room.checkRoleToSpawn('squadsiege', 2, undefined, targetRoom);
       break;
     case 'SIEGE':
       room.checkRoleToSpawn('dismantler', 2, undefined, targetRoom);

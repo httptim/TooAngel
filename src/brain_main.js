@@ -8,6 +8,9 @@ const {handleEarlyExpansion} = require('./brain_earlyexpansion');
 const {handleScoutElimination} = require('./brain_scouteliminator');
 const {handleAggression} = require('./brain_aggression');
 const {handleSpawnEmergency} = require('./brain_emergency_spawn');
+const {handleDomination} = require('./brain_domination');
+const {handleMilitaryCoordination} = require('./brain_military_coordinator');
+const {handleSquadSystem} = require('./brain_squad_combat');
 
 global.cpuUsed = 0;
 
@@ -113,6 +116,13 @@ module.exports.execute = function() {
     if (config.aggression && config.aggression.enabled) {
       handleScoutElimination();  // Kill enemy scouts
       handleAggression();        // Coordinate attacks
+      handleSquadSystem();       // Squad formations and combat
+      handleMilitaryCoordination(); // Wave attacks and retreats
+
+      // Phase 4: Domination - Total regional control
+      if (config.aggression.domination) {
+        handleDomination();
+      }
     }
     brain.handleNextroomer();
     handleSquadManager();

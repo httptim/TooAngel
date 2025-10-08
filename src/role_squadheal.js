@@ -9,9 +9,9 @@
 roles.squadheal = {};
 
 roles.squadheal.settings = {
-  layoutString: 'MH',
+  layoutString: 'MH',  // Move, Heal - standard layout
   amount: [1, 1],
-  fillTough: true,
+  fillTough: true,     // TOUGH parts first for protection
 };
 
 roles.squadheal.preMove = function(creep, directions) {
@@ -61,7 +61,14 @@ roles.squadheal.preMove = function(creep, directions) {
 
 // TODO need to check if it works
 roles.squadheal.action = function(creep) {
+  // Use squad combat system - healers MUST stay with their squad
+  if (brain.handleSquadCombat) {
+    return brain.handleSquadCombat(creep);
+  }
+
+  // Fallback healing logic
   creep.selfHeal();
+
   if (creep.room.name !== creep.memory.routing.targetRoom) {
     // creep.log('Not in room');
     if (creep.hits < creep.hitsMax) {

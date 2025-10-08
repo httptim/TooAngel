@@ -140,6 +140,12 @@ global.config = {
     roomConquest: true,           // Enable main room conquest
     minRCLForConquest: 5,        // Minimum RCL to attempt conquest
     siegeCoordination: true,      // Enable siege coordination
+    // Phase 4: Domination
+    domination: true,             // Enable domination phase
+    regionalControl: true,        // Eliminate all regional threats
+    controlRadius: 5,             // Control radius in rooms
+    expansionAcceleration: true,  // Use conquest profits for growth
+    totalWar: true,              // Enable total war campaigns
   },
 
   earlyExpansion: {

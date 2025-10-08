@@ -398,21 +398,30 @@ function updateRoomIntelligence(room) {
     };
   }
 
-  // Store attack targets
+  // Store attack targets (skip if in safe mode)
   if (intel.assessment.attackRecommended) {
-    if (!Memory.attackTargets) {
-      Memory.attackTargets = {};
-    }
-    Memory.attackTargets[room.name] = {
-      priority: intel.assessment.attackPriority,
-      strategy: intel.assessment.attackStrategy,
-      lastChecked: Game.time,
-      controller: intel.controller,
-      defenses: {
-        towers: intel.towers.length,
-        spawns: intel.spawns.length
+    // Check for safe mode
+    if (intel.controller && intel.controller.safeMode) {
+      console.log(`Scout: ${room.name} is in safe mode for ${intel.controller.safeMode} ticks - not marking as attack target`);
+      // Remove from attack targets if it was there
+      if (Memory.attackTargets && Memory.attackTargets[room.name]) {
+        delete Memory.attackTargets[room.name];
       }
-    };
+    } else {
+      if (!Memory.attackTargets) {
+        Memory.attackTargets = {};
+      }
+      Memory.attackTargets[room.name] = {
+        priority: intel.assessment.attackPriority,
+        strategy: intel.assessment.attackStrategy,
+        lastChecked: Game.time,
+        controller: intel.controller,
+        defenses: {
+          towers: intel.towers.length,
+          spawns: intel.spawns.length
+        }
+      };
+    }
   }
 
   // Alert on enemy remote harvesters
