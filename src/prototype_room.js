@@ -34,6 +34,7 @@ Object.defineProperty(Room.prototype, 'data', {
     }
     return global.data.rooms[this.name];
   },
+  configurable: true,
 });
 
 Room.prototype.executeEveryTicks = function(ticks) {

@@ -52,7 +52,7 @@ roles.carry.updateSettings = function(room, creep) {
  */
 function checkHelperEmptyStorage(creep) {
   // Fix blocked helpers due to empty structure in the room where we get the energy from
-  if (creep.room.name === creep.memory.routing.targetRoom) {
+  if (creep.memory.routing && creep.room.name === creep.memory.routing.targetRoom) {
     const targetStructure = Game.getObjectById(creep.memory.routing.targetId);
     if (targetStructure === null) {
       creep.suicide();
@@ -369,6 +369,16 @@ function handleSourceKeeperRoom(creep) {
 roles.carry.action = function(creep) {
   // TODO log when this happens, carry is getting energy from the source
   creep.creepLog('ACTION');
+
+  // Check if routing exists, if not initialize it
+  if (!creep.memory.routing) {
+    creep.memory.routing = {
+      targetRoom: creep.memory.base,
+      reached: false,
+      reverse: false
+    };
+  }
+
   const source = Game.getObjectById(creep.memory.routing.targetId);
   if (source === null) {
     creep.creepLog('sfener');

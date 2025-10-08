@@ -13,6 +13,20 @@ try {
   global.friends = [];
 }
 
+// Initialize global data structures
+if (!global.data) {
+  global.data = {};
+}
+if (!global.data.rooms) {
+  global.data.rooms = {};
+}
+if (!global.data.creeps) {
+  global.data.creeps = {};
+}
+if (!global.brain) {
+  global.brain = {};
+}
+
 global.config = {
   profiler: {
     enabled: false,
@@ -123,6 +137,9 @@ global.config = {
     continuousPressure: true,     // Never stop attacking
     peacefulPlayers: [],          // Empty - no one is safe
     checkInterval: 100,           // Check for targets every 100 ticks
+    roomConquest: true,           // Enable main room conquest
+    minRCLForConquest: 5,        // Minimum RCL to attempt conquest
+    siegeCoordination: true,      // Enable siege coordination
   },
 
   earlyExpansion: {
@@ -334,6 +351,9 @@ global.config = {
     otherRoom: {
       claimer: 6,
       earlyharvester: 7,  // High priority for early expansion
+      dismantler: 8,      // High priority for conquest
+      squadsiege: 9,
+      squadheal: 10,
       universal: 11,
       defender: 12,
       defendranged: 13,

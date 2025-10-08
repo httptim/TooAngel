@@ -77,12 +77,13 @@ Creep.prototype.pickupWhileMoving = function() {
     return _.sum(this.store) + amount > 0.5 * this.store.getCapacity();
   }
 
-  if (this.room.name === this.memory.routing.targetRoom) {
+  if (this.memory.routing && this.room.name === this.memory.routing.targetRoom) {
     const containers = this.pos.findInRangeStructuresWithUsableEnergy(1);
 
     for (const container of containers) {
       // To avoid carry withdrawing energy from base storage
-      if (container.structureType === STRUCTURE_STORAGE && container.id !== this.memory.routing.targetId) {
+      if (container.structureType === STRUCTURE_STORAGE && this.memory.routing.targetId &&
+          container.id !== this.memory.routing.targetId) {
         continue;
       }
       if (container.store[RESOURCE_ENERGY]) {
@@ -521,6 +522,14 @@ Creep.prototype.moveToAndBuildConstructionSite = function(target) {
 };
 
 Creep.prototype.construct = function() {
+  // Initialize routing if it doesn't exist
+  if (!this.memory.routing) {
+    this.memory.routing = {
+      targetRoom: this.room.name,
+      reached: true
+    };
+  }
+
   let target;
   if (this.memory.routing.targetId) {
     target = Game.getObjectById(this.memory.routing.targetId);

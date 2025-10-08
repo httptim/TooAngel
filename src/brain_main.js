@@ -7,6 +7,7 @@ const {handleSquadManager} = require('./brain_squadmanager');
 const {handleEarlyExpansion} = require('./brain_earlyexpansion');
 const {handleScoutElimination} = require('./brain_scouteliminator');
 const {handleAggression} = require('./brain_aggression');
+const {handleSpawnEmergency} = require('./brain_emergency_spawn');
 
 global.cpuUsed = 0;
 
@@ -101,6 +102,8 @@ module.exports.execute = function() {
   Memory.time = Game.time;
   try {
     prepareMemory();
+    // CRITICAL: Handle spawn emergencies FIRST
+    handleSpawnEmergency();
     brain.buyPower();
     // Handle early expansion before normal expansion
     if (config.earlyExpansion.enabled) {

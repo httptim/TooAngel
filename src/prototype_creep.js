@@ -12,6 +12,7 @@ Object.defineProperty(Creep.prototype, 'data', {
     }
     return global.data.creeps[this.name];
   },
+  configurable: true,
 });
 
 /**
@@ -139,16 +140,30 @@ Creep.prototype.handle = function() {
       return;
     }
 
+    // EMERGENCY: Check if we need to build spawn
+    if (this.memory.emergencySpawnBuilder) {
+      if (brain.handleEmergencyBuilder && brain.handleEmergencyBuilder(this)) {
+        return true;
+      }
+      // If handleEmergencyBuilder returns false, the emergency is over
+      // Continue with normal role execution below
+    }
+
     if (!this.memory.boosted && this.boost()) {
       return true;
     }
 
-    if (this.memory.routing && this.memory.routing.reached) {
+    // Handle creeps with routing
+    if (this.memory.routing) {
+      if (this.memory.routing.reached) {
+        return this.unit().action(this);
+      }
+      if (this.followPath(this.unit().action)) {
+        return true;
+      }
+    } else {
+      // Handle creeps without routing (builders, universal in base, etc.)
       return this.unit().action(this);
-    }
-
-    if (this.followPath(this.unit().action)) {
-      return true;
     }
 
     this.log('Reached end of handling() why?', JSON.stringify(this.memory));

@@ -211,10 +211,10 @@ brain.findRemoteTakeoverTargets = function() {
     const value = calculateRoomValue(roomData, roomName);
     const cost = calculateTakeoverCost(roomData, roomName);
     const profit = value - cost;
-    const roi = value / cost;
+    const roi = cost > 0 ? value / cost : 0;
 
     // Only include profitable targets
-    if (roi >= config.aggression.profitThreshold) {
+    if (roi >= (config.aggression?.profitThreshold || 1.3)) {
       targets.push({
         room: roomName,
         owner: roomData.reservation ? roomData.reservation.username : 'unknown',
@@ -291,7 +291,7 @@ brain.executeRemoteTakeover = function(target) {
  */
 function eliminateMiners(launchRoom, target) {
   // Check if we already have attackers heading there
-  const attackers = _.filter(Game.creeps, (creep) =>
+  const attackers = _.filter(Object.values(Game.creeps), (creep) =>
     creep.memory.role === 'defender' &&
     creep.memory.routing && creep.memory.routing.targetRoom === target.room,
   );
@@ -354,7 +354,7 @@ function establishControl(launchRoom, target) {
   }
 
   // Send a reserver
-  const reservers = _.filter(Game.creeps, (creep) =>
+  const reservers = _.filter(Object.values(Game.creeps), (creep) =>
     creep.memory.role === 'reserver' &&
     creep.memory.routing && creep.memory.routing.targetRoom === target.room,
   );
@@ -366,7 +366,7 @@ function establishControl(launchRoom, target) {
 
   // Send harvesters for each source
   for (let i = 0; i < target.sources; i++) {
-    const harvesters = _.filter(Game.creeps, (creep) =>
+    const harvesters = _.filter(Object.values(Game.creeps), (creep) =>
       (creep.memory.role === 'sourcer' || creep.memory.role === 'earlyharvester') &&
       creep.memory.routing && creep.memory.routing.targetRoom === target.room,
     );

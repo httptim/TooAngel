@@ -104,6 +104,15 @@ Room.prototype.buildRampartsAroundSpawns = function() {
  */
 function destroyStructureSpawn(room, structure) {
   const spawnsCount = room.findMySpawns().length;
+
+  // CRITICAL FIX: Never destroy spawn if we can't build another one
+  // At RCL < 7, we can only have 1 spawn, and can't place construction sites for more
+  if (room.controller.level < 7 && spawnsCount <= 1) {
+    room.log(`WARNING: Cannot destroy spawn at RCL ${room.controller.level} - unable to rebuild!`);
+    room.memory.misplacedSpawn = false;
+    return false;
+  }
+
   if (room.memory.misplacedSpawn) {
     if (spawnsCount < config.myRoom.leastSpawnsToRebuildStructureSpawn) {
       room.memory.misplacedSpawn = false;

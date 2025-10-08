@@ -214,8 +214,8 @@ function eliminateScout(scout) {
     debugLog('aggression', `Defender ${defender.name} assigned to eliminate scout ${scout.id}`);
   } else {
     // No defender available, queue emergency spawn if it's an owned room
-    if (room.controller && room.controller.my && room.energyAvailable >= 260) {
-      // Queue a basic defender spawn
+    if (room && room.controller && room.controller.my && room.energyAvailable >= 500) {
+      // Queue a basic defender spawn (increased minimum energy for effectiveness)
       room.checkRoleToSpawn('defender', 1, scout.id, scout.room);
       debugLog('aggression', `Emergency defender queued in ${scout.room} for scout elimination`);
     }

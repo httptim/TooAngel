@@ -73,8 +73,8 @@ function calculateProfitability(target, attackType) {
     totalCost: totalCost,
     totalGain: totalGain,
     netProfit: totalGain - totalCost,
-    roi: totalGain / totalCost,
-    decision: (totalGain / totalCost) >= config.aggression.profitThreshold ? 'ATTACK' : 'SKIP',
+    roi: totalCost > 0 ? totalGain / totalCost : 0,
+    decision: (totalCost > 0 && (totalGain / totalCost) >= (config.aggression?.profitThreshold || 1.3)) ? 'ATTACK' : 'SKIP',
   };
 }
 
@@ -214,7 +214,7 @@ function maintainPressure() {
     }
 
     // Maintain pressure by ensuring we have attackers
-    const attackers = _.filter(Game.creeps, (creep) =>
+    const attackers = _.filter(Object.values(Game.creeps), (creep) =>
       creep.memory.routing && creep.memory.routing.targetRoom === roomName &&
       (creep.memory.role === 'defender' || creep.memory.role === 'defendranged'),
     );
@@ -230,6 +230,37 @@ function maintainPressure() {
       }
     }
   }
+}
+
+/**
+ * getHostilePlayers
+ * Gets list of hostile players to target
+ *
+ * @return {Array} - Array of hostile player names
+ */
+function getHostilePlayers() {
+  const hostilePlayers = [];
+
+  // Get players from Memory.hostilePlayers (from scout detection)
+  if (Memory.hostilePlayers) {
+    for (const player in Memory.hostilePlayers) {
+      if (!global.friends || !global.friends.includes(player)) {
+        hostilePlayers.push(player);
+      }
+    }
+  }
+
+  // Add players we know about from room data
+  for (const roomName in Memory.rooms) {
+    const roomData = Memory.rooms[roomName];
+    if (roomData && roomData.player && !hostilePlayers.includes(roomData.player)) {
+      if (!global.friends || !global.friends.includes(roomData.player)) {
+        hostilePlayers.push(roomData.player);
+      }
+    }
+  }
+
+  return hostilePlayers;
 }
 
 /**
@@ -282,18 +313,154 @@ function findWeakNeighbors() {
 }
 
 /**
+ * processScoutIntelligence
+ * Processes attack targets identified by scouts
+ */
+function processScoutIntelligence() {
+  if (!Memory.attackTargets) {
+    return;
+  }
+
+  // Clean up old entries and find best target
+  let bestTarget = null;
+  let bestPriority = 0;
+
+  for (const roomName of Object.keys(Memory.attackTargets)) {
+    const target = Memory.attackTargets[roomName];
+
+    // Clean up old data
+    if (Game.time - target.lastChecked > 3000) {
+      delete Memory.attackTargets[roomName];
+      continue;
+    }
+
+    // Find highest priority target
+    if (target.priority > bestPriority) {
+      bestTarget = roomName;
+      bestPriority = target.priority;
+    }
+  }
+
+  if (bestTarget && bestPriority >= 3) {
+    const target = Memory.attackTargets[bestTarget];
+    console.log(`Scout intelligence suggests attacking ${bestTarget} with strategy: ${target.strategy}`);
+
+    // Launch appropriate attack based on strategy
+    const closestRoom = findClosestMyRoom(bestTarget);
+    if (closestRoom) {
+      launchAttack(closestRoom, bestTarget, target.strategy);
+    }
+  }
+}
+
+/**
+ * processEnemyHarvesters
+ * Processes enemy harvesters detected by scouts
+ */
+function processEnemyHarvesters() {
+  if (!Memory.enemyHarvesters) {
+    return;
+  }
+
+  for (const roomName of Object.keys(Memory.enemyHarvesters)) {
+    const harvesterData = Memory.enemyHarvesters[roomName];
+
+    // Clean up old data
+    if (Game.time - harvesterData.lastSeen > 1000) {
+      delete Memory.enemyHarvesters[roomName];
+      continue;
+    }
+
+    console.log(`Enemy harvester in ${roomName} owned by ${harvesterData.owner} - sending eliminators`);
+
+    // Find closest room to launch attack
+    const closestRoom = findClosestMyRoom(roomName);
+    if (closestRoom) {
+      // Spawn small attack squad to eliminate harvesters
+      const room = Game.rooms[closestRoom];
+      if (room) {
+        room.checkRoleToSpawn('defender', 2, undefined, roomName);
+      }
+
+      // Mark as being handled
+      harvesterData.attackSent = Game.time;
+    }
+  }
+}
+
+/**
+ * launchAttack
+ * Launches an attack from a room
+ */
+function launchAttack(fromRoom, targetRoom, strategy) {
+  const room = Game.rooms[fromRoom];
+  if (!room) return;
+
+  console.log(`Launching ${strategy} attack from ${fromRoom} to ${targetRoom}`);
+
+  // Record attack
+  if (!Memory.roomsUnderAttack) {
+    Memory.roomsUnderAttack = {};
+  }
+  Memory.roomsUnderAttack[targetRoom] = {
+    startTime: Game.time,
+    fromRoom: fromRoom,
+    strategy: strategy
+  };
+
+  // Spawn appropriate forces based on strategy
+  switch (strategy) {
+    case 'EARLY_RUSH':
+    case 'ELIMINATE_HARVESTERS':
+      room.checkRoleToSpawn('defender', 3, undefined, targetRoom);
+      break;
+    case 'COORDINATED_ASSAULT':
+      room.checkRoleToSpawn('defender', 4, undefined, targetRoom);
+      room.checkRoleToSpawn('healer', 2, undefined, targetRoom);
+      break;
+    case 'SIEGE':
+      room.checkRoleToSpawn('dismantler', 2, undefined, targetRoom);
+      room.checkRoleToSpawn('defender', 2, undefined, targetRoom);
+      room.checkRoleToSpawn('healer', 1, undefined, targetRoom);
+      break;
+    default:
+      room.checkRoleToSpawn('defender', 2, undefined, targetRoom);
+  }
+}
+
+/**
+ * findClosestMyRoom
+ * Finds the closest owned room to target
+ */
+function findClosestMyRoom(targetRoom) {
+  let closestRoom = null;
+  let closestDistance = Infinity;
+
+  for (const roomName of Memory.myRooms || []) {
+    const distance = Game.map.getRoomLinearDistance(roomName, targetRoom);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestRoom = roomName;
+    }
+  }
+
+  return closestRoom;
+}
+
+/**
  * Main aggression tick function
  * Coordinates all aggressive activities
  */
 brain.handleAggression = function() {
-  if (!config.aggression || !config.aggression.enabled) {
-    return;
-  }
+  try {
+    if (!config.aggression || !config.aggression.enabled) {
+      return;
+    }
 
-  // Check based on config interval
-  if (Game.time % config.aggression.checkInterval !== 0) {
-    return;
-  }
+    // Check based on config interval
+    if (Game.time % config.aggression.checkInterval !== 0) {
+      return;
+    }
 
   // Check if we have minimum RCL
   let maxRCL = 0;
@@ -309,6 +476,12 @@ brain.handleAggression = function() {
   }
 
   debugLog('aggression', 'Running aggression check');
+
+  // Process scout intelligence for attack targets
+  processScoutIntelligence();
+
+  // Process enemy harvesters detected by scouts
+  processEnemyHarvesters();
 
   // Step 1: Eliminate scouts (runs every 10 ticks via its own module)
   // Handled by brain_scouteliminator
@@ -400,9 +573,52 @@ brain.handleAggression = function() {
     }
   }
 
-  // Step 6: Maintain pressure on all fronts
+  // Step 6: Consider main room conquest (Phase 3)
+  if (maxRCL >= 5 && capability.availableDefenders >= 4) {
+    const hostilePlayers = getHostilePlayers();
+
+    for (const player of hostilePlayers) {
+      // Check if we have conquest capability
+      if (brain.assessConquest) {
+        const conquest = brain.assessConquest(player);
+
+        if (conquest && conquest.roi.profitable) {
+          debugLog('aggression', `Conquest opportunity: ${conquest.target} owned by ${player}, ROI: ${conquest.roi.roi.toFixed(2)}`);
+
+          // Check retaliation risk
+          const retaliation = assessRetaliation(conquest, 'ROOM_CONQUEST');
+
+          if (retaliation.recommendation !== 'ABORT') {
+            // Execute conquest
+            if (brain.executeConquest) {
+              brain.executeConquest(conquest);
+            }
+            break;  // One conquest at a time
+          }
+        }
+      }
+    }
+  }
+
+  // Step 7: Monitor ongoing conquests
+  if (brain.monitorConquest) {
+    brain.monitorConquest();
+  }
+
+  // Step 8: Coordinate siege operations
+  if (Memory.conquestTargets && brain.coordinateSiege) {
+    for (const roomName in Memory.conquestTargets) {
+      brain.coordinateSiege(roomName);
+    }
+  }
+
+  // Step 9: Maintain pressure on all fronts
   if (config.aggression.continuousPressure) {
     maintainPressure();
+  }
+  } catch (error) {
+    console.log(`ERROR in brain.handleAggression: ${error}`);
+    console.log(error.stack);
   }
 };
 

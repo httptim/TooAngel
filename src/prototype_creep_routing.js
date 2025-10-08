@@ -175,6 +175,10 @@ Creep.prototype.followPath = function(action) {
 };
 
 Creep.prototype.followPathWithoutTargetId = function() {
+  // Check if routing exists first
+  if (!this.memory.routing) {
+    return false;
+  }
   if (this.room.name !== this.memory.routing.targetRoom) {
     return false;
   }

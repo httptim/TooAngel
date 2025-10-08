@@ -154,14 +154,18 @@ RoomPosition.prototype.inPositions = function() {
     return false;
   }
 
-  for (const creepId of Object.keys(room.data.positions.creep)) {
+  for (const creepId of Object.keys(room.data.positions.creep || {})) {
     if (!room.data.positions.creep[creepId]) {
       // TODO when does this happen?
       continue;
     }
     try {
-      for (const pos of room.data.positions.creep[creepId]) {
-        if (!pos) {
+      const positions = room.data.positions.creep[creepId];
+      if (!Array.isArray(positions)) {
+        continue;
+      }
+      for (const pos of positions) {
+        if (!pos || typeof pos !== 'object') {
           continue;
         }
         if (this.isEqualTo(pos.x, pos.y)) {
@@ -169,12 +173,19 @@ RoomPosition.prototype.inPositions = function() {
         }
       }
     } catch (e) {
-      this.log(`inPositions ${creepId} ${room.data.positions.creep[creepId]} ${e}`);
+      this.log(`inPositions ${creepId} ${JSON.stringify(room.data.positions.creep[creepId])} ${e} ${e.stack}`);
     }
   }
 
   for (const structureId of Object.keys((room.data.positions.structure || {}))) {
-    for (const pos of room.data.positions.structure[structureId]) {
+    const positions = room.data.positions.structure[structureId];
+    if (!Array.isArray(positions)) {
+      continue;
+    }
+    for (const pos of positions) {
+      if (!pos || typeof pos !== 'object') {
+        continue;
+      }
       if (this.isEqualTo(pos.x, pos.y)) {
         return true;
       }
