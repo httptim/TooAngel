@@ -214,7 +214,7 @@ brain.findRemoteTakeoverTargets = function() {
     const roi = cost > 0 ? value / cost : 0;
 
     // Only include profitable targets
-    if (roi >= (config.aggression?.profitThreshold || 1.3)) {
+    if (roi >= ((config.aggression && config.aggression.profitThreshold) || 1.3)) {
       targets.push({
         room: roomName,
         owner: roomData.reservation ? roomData.reservation.username : 'unknown',

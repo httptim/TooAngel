@@ -74,7 +74,7 @@ function calculateProfitability(target, attackType) {
     totalGain: totalGain,
     netProfit: totalGain - totalCost,
     roi: totalCost > 0 ? totalGain / totalCost : 0,
-    decision: (totalCost > 0 && (totalGain / totalCost) >= (config.aggression?.profitThreshold || 1.3)) ? 'ATTACK' : 'SKIP',
+    decision: (totalCost > 0 && (totalGain / totalCost) >= ((config.aggression && config.aggression.profitThreshold) || 1.3)) ? 'ATTACK' : 'SKIP',
   };
 }
 

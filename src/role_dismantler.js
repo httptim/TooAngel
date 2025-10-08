@@ -208,7 +208,9 @@ roles.dismantler.preMove = function(creep) {
 roles.dismantler.action = function(creep) {
   // Set base room if not set
   if (!creep.memory.base) {
-    creep.memory.base = creep.memory.routing?.startRoom || creep.memory.routing?.targetRoom || creep.room.name;
+    creep.memory.base = (creep.memory.routing && creep.memory.routing.startRoom) ||
+                        (creep.memory.routing && creep.memory.routing.targetRoom) ||
+                        creep.room.name;
   }
 
   // Check if we should retreat

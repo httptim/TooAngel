@@ -201,7 +201,7 @@ function calculateConquestROI(targetRoom, strength, force) {
     totalCost: totalCost,
     totalGain: totalGain,
     roi: totalCost > 0 ? totalGain / totalCost : 0,
-    profitable: totalCost > 0 && totalGain / totalCost >= (config.aggression?.profitThreshold || 1.3),
+    profitable: totalCost > 0 && totalGain / totalCost >= ((config.aggression && config.aggression.profitThreshold) || 1.3),
   };
 }
 
