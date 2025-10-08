@@ -5,6 +5,8 @@ const {handleQuests} = require('./quests_host');
 const {prepareMemory} = require('./brain_memory');
 const {handleSquadManager} = require('./brain_squadmanager');
 const {handleEarlyExpansion} = require('./brain_earlyexpansion');
+const {handleScoutElimination} = require('./brain_scouteliminator');
+const {handleAggression} = require('./brain_aggression');
 
 global.cpuUsed = 0;
 
@@ -103,6 +105,11 @@ module.exports.execute = function() {
     // Handle early expansion before normal expansion
     if (config.earlyExpansion.enabled) {
       handleEarlyExpansion();
+    }
+    // Handle aggressive expansion features
+    if (config.aggression && config.aggression.enabled) {
+      handleScoutElimination();  // Kill enemy scouts
+      handleAggression();        // Coordinate attacks
     }
     brain.handleNextroomer();
     handleSquadManager();

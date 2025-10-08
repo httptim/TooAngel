@@ -73,6 +73,15 @@ Creep.prototype.moveToHostileConstructionSites = function() {
 };
 
 Creep.prototype.handleDefender = function() {
+  // Check if we have a scout elimination target
+  if (this.memory.scoutTarget) {
+    const scoutTarget = brain.getScoutTarget ? brain.getScoutTarget(this) : null;
+    if (scoutTarget) {
+      this.say('Scout!');
+      return this.attackHostile(scoutTarget);
+    }
+  }
+
   const hostile = this.findClosestEnemy();
 
   if (this.fightRampart(hostile)) {
